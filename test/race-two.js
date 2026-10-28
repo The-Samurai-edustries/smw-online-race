@@ -68,6 +68,12 @@ const read = (page) => page.evaluate(() => window.__race.ram.read());
   const tracker = await A.evaluate(() => document.getElementById("racers").innerText.replace(/\n+/g, " / "));
   console.log("A tracker:", tracker);
   console.log("A clock:", await A.textContent("#raceClock"));
+  // SHIFT_GHOST: both Marios stand on the same spot in the intro, so slide Bob's ghost 40px on Alice's
+  // screen to see it next to her real Mario.
+  await A.evaluate(() => { const S = window.__race, orig = S.states.set.bind(S.states);
+    S.states.set = (id, st) => orig(id, id === S.myId ? st : { ...st, x: st.x + 40 }); });
+  await A.waitForTimeout(800);
+  console.log("A sprite cache:", await A.evaluate(() => [...window.__race.spriteImgs.keys()].join(",")));
   await A.screenshot({ path: shotDir + "/race-A.png" });
   for (const b of browsers) await b.close();
 })().catch(e => { console.error(e); process.exit(1); });

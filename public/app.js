@@ -14,7 +14,8 @@
     players: [], states: new Map(), smooth: new Map(), clockOffset: 0, bestRtt: Infinity,
     rom: null, romCrc: null, romKind: null, emu: null, ram: null, emuReady: false,
     ready: false, lastSend: 0, finishStreak: 0, sentFinish: false, raceStartedLocally: false,
-    my: null,
+    my: null, sprite: null, lastCap: null, sentSprites: new Set(),
+    spriteImgs: new Map(), spriteAsked: new Set(),
   };
   window.__race = S; // handy for debugging in the console
 
@@ -87,7 +88,12 @@
     // locate WRAM after the game has run a little
     let tries = 0;
     const attempt = () => {
-      if (S.ram.locate()) setRamStatus("● tracking", "good");
+      if (S.ram.locate()) {
+        setRamStatus("● tracking", "good");
+        if (!S.sprite && S.romKind !== "other" && window.SpriteCapture) {
+          try { S.sprite = new SpriteCapture(S.ram, S.rom); } catch (e) { console.warn("sprite capture off:", e); }
+        }
+      }
       else if (++tries < 20) { setRamStatus("looking for game memory…", ""); setTimeout(attempt, 750); }
       else setRamStatus("✖ can't read game memory: " + S.ram.lastError, "bad");
     };
@@ -186,6 +192,21 @@
       case "states":
         for (const [id, st] of m.list) S.states.set(id, st);
         break;
+      case "sprite": {
+        const img = new Image();
+        img.onload = () => { // remember the first non-transparent row, so the name tag sits on his head
+          try {
+            const c = document.createElement("canvas"); c.width = img.naturalWidth; c.height = img.naturalHeight;
+            const x = c.getContext("2d"); x.drawImage(img, 0, 0);
+            const d = x.getImageData(0, 0, c.width, c.height).data;
+            let top = 0; outer: for (let y = 0; y < c.height; y++) for (let i = 0; i < c.width; i++) if (d[(y * c.width + i) * 4 + 3]) { top = y; break outer; }
+            img.opaqueTop = top;
+          } catch { img.opaqueTop = 0; }
+        };
+        img.src = m.url;
+        S.spriteImgs.set(m.id + ":" + m.key, img);
+        break;
+      }
       case "chat": addChat(m); break;
       case "error": addChat({ system: true, text: m.text }); $("joinBtn").disabled = false; if (!S.myId && S.ws) S.ws.close(); break;
     }
@@ -236,6 +257,15 @@
       if (now - S.lastSend >= SEND_EVERY_MS) {
         S.lastSend = now;
         const { cut, ...pub } = mine;
+        if (S.sprite) {
+          let cap = null;
+          try { cap = S.sprite.capture(mine); } catch (e) { /* keep racing without a sprite */ }
+          if (cap) {
+            pub.spr = cap.key; pub.sox = cap.ox; pub.soy = cap.oy;
+            if (!S.sentSprites.has(cap.key)) { S.sentSprites.add(cap.key); send({ t: "sprite", key: cap.key, url: cap.url }); }
+          } else if (S.lastCap) { pub.spr = S.lastCap.key; pub.sox = S.lastCap.ox; pub.soy = S.lastCap.oy; }
+          if (cap) S.lastCap = cap;
+        }
         send({ t: "state", s: pub });
       }
       if (!S.sentFinish && !(S.my && S.my.finished)) {
@@ -288,12 +318,44 @@
       if (!sm || Math.abs(sm.x - st.x) > 96 || Math.abs(sm.y - st.y) > 96) sm = { x: st.x, y: st.y };
       sm.x += (st.x - sm.x) * 0.35; sm.y += (st.y - sm.y) * 0.35;
       S.smooth.set(id, sm);
+      const img = st.spr ? S.spriteImgs.get(id + ":" + st.spr) : null;
+      if (st.spr && !img) {
+        const k = id + ":" + st.spr;
+        if (!S.spriteAsked.has(k)) { S.spriteAsked.add(k); send({ t: "getSprite", id, key: st.spr }); }
+      }
+      if (img && img.complete && img.naturalWidth) {
+        const px = ox + (sm.x - mine.cx + st.sox) * sx, py = oy + (sm.y - mine.cy + st.soy) * sy;
+        const w = img.naturalWidth * sx, h = img.naturalHeight * sy;
+        if (px < -w - 40 || px > W + 40 || py < -h - 40 || py > H + 40) continue;
+        drawSpriteGhost(img, px, py, w, h, p.color, p.name);
+        continue;
+      }
       const big = st.pow > 0;
       const top = sm.y + (big ? 2 : 14), h = big ? 30 : 18;
       const px = ox + (sm.x - mine.cx) * sx, py = oy + (top - mine.cy) * sy;
       if (px < -40 || px > W + 40 || py < -60 || py > H + 40) continue;
       drawGhost(px, py, 16 * sx, h * sy, p.color, st.dir, p.name, st.yoshi);
     }
+  }
+  // The racer's real Mario frame, a little see-through, with a coloured glow so you can tell who's who.
+  function drawSpriteGhost(img, x, y, w, h, color, name) {
+    gctx.save();
+    gctx.imageSmoothingEnabled = false;
+    gctx.globalAlpha = 0.72;
+    gctx.shadowColor = color; gctx.shadowBlur = 8;
+    gctx.drawImage(img, x, y, w, h);
+    gctx.restore();
+    nameTag(x + w / 2, y + (img.opaqueTop || 0) * (h / img.naturalHeight), color, name);
+  }
+  function nameTag(cx, top, color, name) {
+    gctx.save();
+    gctx.font = "600 11px Inter, sans-serif";
+    const tw = gctx.measureText(name).width + 8;
+    gctx.fillStyle = "rgba(0,0,0,.65)";
+    gctx.fillRect(cx - tw / 2, top - 17, tw, 14);
+    gctx.fillStyle = color;
+    gctx.fillText(name, cx - tw / 2 + 4, top - 6);
+    gctx.restore();
   }
   function drawGhost(x, y, w, h, color, dir, name, yoshi) {
     gctx.save();
@@ -315,15 +377,8 @@
     const ex = dir ? x + w * 0.55 : x + w * 0.2, ey = y + r * 0.8, es = Math.max(2, w * 0.16);
     gctx.fillRect(ex, ey, es, es * 1.4); gctx.fillRect(ex + es * 1.6, ey, es, es * 1.4);
     if (yoshi) { gctx.fillStyle = "#3fd13f"; gctx.fillRect(x - w * 0.1, y + h - 2, w * 1.2, 4); }
-    // name tag
-    gctx.globalAlpha = 1;
-    gctx.font = "600 11px Inter, sans-serif";
-    const tw = gctx.measureText(name).width + 8;
-    gctx.fillStyle = "rgba(0,0,0,.65)";
-    gctx.fillRect(x + w / 2 - tw / 2, y - 17, tw, 14);
-    gctx.fillStyle = color;
-    gctx.fillText(name, x + w / 2 - tw / 2 + 4, y - 6);
     gctx.restore();
+    nameTag(x + w / 2, y, color, name);
   }
 
   // ---------------- UI ----------------

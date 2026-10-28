@@ -105,7 +105,7 @@ function fmtTime(ms) {
 }
 
 // ---------- websocket ----------
-const wss = new WebSocketServer({ server, path: "/ws", maxPayload: 4096 });
+const wss = new WebSocketServer({ server, path: "/ws", maxPayload: 16384 });
 
 wss.on("connection", (ws) => {
   let room = null, me = null;
@@ -179,6 +179,24 @@ wss.on("connection", (ws) => {
         me.state = sanitizeState(m.s);
         me.stateFresh = true;
         break;
+      case "sprite": {
+        // A racer's own Mario frame (PNG made from their game), relayed so others can draw their ghost.
+        const key = m.key | 0, url = String(m.url || "");
+        if (!(key >= 0 && key <= 0xFFFFFF) || !url.startsWith("data:image/png;base64,") || url.length > 12000) break;
+        if (!me.sprites) me.sprites = new Map();
+        if (!me.sprites.has(key)) {
+          if (me.sprites.size >= 600) me.sprites.delete(me.sprites.keys().next().value);
+          me.sprites.set(key, url);
+        }
+        broadcast(room, { t: "sprite", id: me.id, key, url });
+        break;
+      }
+      case "getSprite": {
+        const owner = room.players.get(m.id | 0);
+        const url = owner && owner.sprites && owner.sprites.get(m.key | 0);
+        if (url) send(ws, { t: "sprite", id: owner.id, key: m.key | 0, url });
+        break;
+      }
       case "finish":
         if (me.forfeit) break;
         markFinished(room, me, "self");
@@ -222,12 +240,12 @@ wss.on("connection", (ws) => {
   });
 });
 
-const STATE_KEYS = ["mode", "x", "y", "cx", "cy", "room", "lvl", "pow", "dir", "yoshi", "lives", "coins", "exits", "sub", "ox", "oy"];
+const STATE_KEYS = ["mode", "x", "y", "cx", "cy", "room", "lvl", "pow", "dir", "yoshi", "lives", "coins", "exits", "sub", "ox", "oy", "spr", "sox", "soy"];
 function sanitizeState(s) {
   const o = {};
   for (const k of STATE_KEYS) {
     const v = Number(s[k]);
-    o[k] = Number.isFinite(v) ? Math.max(-1, Math.min(0xFFFFFF, Math.round(v))) : 0;
+    o[k] = Number.isFinite(v) ? Math.max(-0x8000, Math.min(0xFFFFFF, Math.round(v))) : 0;
   }
   return o;
 }
