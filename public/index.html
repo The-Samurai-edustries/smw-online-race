@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SMW Online Race</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="brand-mark">▶</span> SMW <em>Online Race</em></div>
+  <div class="race-clock" id="raceClock">--:--.--</div>
+  <div class="room-tag" id="roomTag"></div>
+</header>
+
+<main class="layout">
+  <section class="stage">
+    <div class="screen-wrap" id="screenWrap">
+      <div id="game"></div>
+      <canvas id="ghosts"></canvas>
+      <div class="countdown" id="countdown" hidden></div>
+      <div class="placeholder" id="placeholder">
+        <div class="ph-title">Bring your own ROM</div>
+        <p>Load your <b>Super Mario World (USA)</b> ROM below. It stays on your computer — nothing is uploaded.</p>
+      </div>
+    </div>
+    <div class="stage-bar">
+      <label class="btn file-btn" id="romLabel">
+        <input type="file" id="romInput" accept=".sfc,.smc,.swc,.fig">
+        <span>Load ROM…</span>
+      </label>
+      <span class="rom-status" id="romStatus">No ROM loaded</span>
+      <span class="spacer"></span>
+      <span class="ram-status" id="ramStatus" title="Whether the race can read your game"></span>
+    </div>
+    <details class="help">
+      <summary>Controls &amp; rules</summary>
+      <p><b>Keyboard:</b> arrows = D-pad · <kbd>X</kbd> = B (jump) · <kbd>Z</kbd> = A (spin jump) · <kbd>S</kbd> = Y (run) · <kbd>A</kbd> = X · <kbd>Q</kbd>/<kbd>E</kbd> = L/R · <kbd>Enter</kbd> = Start · <kbd>V</kbd> = Select. Gamepads work too; remap in the emulator's controller menu.</p>
+      <p><b>Race:</b> when the countdown hits GO, everyone's game resets at the same moment and your save RAM is wiped, so it's a fresh file for all. First to beat Bowser wins — the finish is detected automatically when the ending starts. Other racers appear as ghosts when you're in the same room of the same level. Save states and fast-forward are turned off during the race.</p>
+    </details>
+  </section>
+
+  <aside class="side">
+    <div class="panel" id="joinPanel">
+      <h2>Join a race</h2>
+      <label>Your name<input id="nameInput" maxlength="16" placeholder="Mario"></label>
+      <label>Room code<input id="roomInput" maxlength="8" placeholder="GLOVE"></label>
+      <button class="btn primary" id="joinBtn">Join</button>
+      <p class="hint">Share the room code (or this page's link once you're in) with your friends.</p>
+    </div>
+
+    <div class="panel" id="lobbyPanel" hidden>
+      <div class="panel-head">
+        <h2 id="phaseTitle">Lobby</h2>
+        <button class="btn small ghost-btn" id="copyLinkBtn">Copy invite link</button>
+      </div>
+      <ol class="racers" id="racers"></ol>
+      <div class="host-controls" id="hostControls" hidden>
+        <button class="btn primary" id="startBtn">Start race</button>
+        <button class="btn" id="resetBtn">Back to lobby</button>
+      </div>
+      <div class="self-controls">
+        <button class="btn" id="readyBtn">I'm ready</button>
+        <button class="btn danger" id="forfeitBtn" hidden>Forfeit</button>
+      </div>
+      <p class="hint" id="lobbyHint"></p>
+    </div>
+
+    <div class="panel chat" id="chatPanel" hidden>
+      <h2>Chat</h2>
+      <ul class="chat-log" id="chatLog"></ul>
+      <form id="chatForm"><input id="chatInput" maxlength="200" placeholder="Say something…" autocomplete="off"></form>
+    </div>
+  </aside>
+</main>
+
+<footer class="foot">Fan project. Not affiliated with Nintendo. No game data is stored or sent anywhere — only your position and progress numbers. Emulation by <a href="https://emulatorjs.org" target="_blank" rel="noopener">EmulatorJS</a> + snes9x.</footer>
+
+<script src="ram.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

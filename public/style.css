@@ -1,0 +1,83 @@
+:root {
+  --bg: #0d0b1a; --panel: #17142b; --panel2: #1f1b3a; --line: #2e2856;
+  --text: #ece9ff; --muted: #9a93c7; --red: #e4002b; --yellow: #ffd23f; --green: #3fd17a; --blue: #4da6ff;
+  --radius: 12px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 Inter, system-ui, sans-serif; }
+a { color: var(--yellow); }
+[hidden] { display: none !important; }
+
+.topbar { display: flex; align-items: center; gap: 16px; padding: 12px 20px; border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, #1a1535, var(--bg)); position: sticky; top: 0; z-index: 5; }
+.brand { font-family: "Press Start 2P", monospace; font-size: 14px; letter-spacing: .5px; white-space: nowrap; }
+.brand em { font-style: normal; color: var(--yellow); }
+.brand-mark { color: var(--red); }
+.race-clock { margin-left: auto; font-family: "Press Start 2P", monospace; font-size: 18px; color: var(--yellow);
+  font-variant-numeric: tabular-nums; }
+.race-clock.done { color: var(--green); }
+.room-tag { font-weight: 800; color: var(--muted); min-width: 90px; text-align: right; }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; padding: 20px; max-width: 1400px; margin: 0 auto; }
+@media (max-width: 960px) { .layout { grid-template-columns: 1fr; padding: 12px 16px; } .race-clock { font-size: 14px; } .brand { font-size: 11px; } }
+
+.screen-wrap { position: relative; aspect-ratio: 4 / 3; background: #000; border-radius: var(--radius); overflow: hidden;
+  border: 2px solid var(--line); box-shadow: 0 10px 40px rgba(0,0,0,.5); }
+#game { position: absolute; inset: 0; }
+#ghosts { position: absolute; inset: 0; pointer-events: none; z-index: 3; }
+.placeholder { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; padding: 24px; gap: 8px;
+  background: radial-gradient(circle at 50% 40%, #241e4a, #000 70%); }
+.ph-title { font-family: "Press Start 2P", monospace; color: var(--yellow); font-size: 16px; line-height: 1.6; }
+.placeholder p { color: var(--muted); max-width: 420px; margin: 0 auto; }
+.countdown { position: absolute; inset: 0; z-index: 4; display: grid; place-items: center; pointer-events: none;
+  font-family: "Press Start 2P", monospace; font-size: clamp(48px, 12vw, 120px); color: var(--yellow);
+  text-shadow: 0 6px 0 #a35b00, 0 0 40px rgba(0,0,0,.8); background: rgba(0,0,0,.35); }
+.countdown.go { color: var(--green); text-shadow: 0 6px 0 #0d6b35; background: transparent; }
+
+.stage-bar { display: flex; align-items: center; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
+.spacer { flex: 1; }
+.rom-status, .ram-status { color: var(--muted); font-size: 13px; }
+.good { color: var(--green) !important; } .warn { color: var(--yellow) !important; } .bad { color: #ff6b6b !important; }
+
+.btn { appearance: none; border: 1px solid var(--line); background: var(--panel2); color: var(--text); font: 600 14px Inter, sans-serif;
+  padding: 9px 14px; border-radius: 9px; cursor: pointer; transition: transform .06s, background .15s; }
+.btn:hover { background: #2a2550; } .btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn.primary { background: var(--red); border-color: #ff3355; } .btn.primary:hover { background: #ff1a45; }
+.btn.danger { border-color: #7a2333; color: #ff8a9a; }
+.btn.small { padding: 5px 9px; font-size: 12px; }
+.file-btn input { display: none; }
+
+.help { margin-top: 14px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 14px; color: var(--muted); }
+.help summary { cursor: pointer; color: var(--text); font-weight: 600; }
+kbd { background: var(--panel2); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; font-size: 12px; color: var(--text); }
+
+.side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
+.panel h2 { margin: 0 0 12px; font-family: "Press Start 2P", monospace; font-size: 12px; color: var(--yellow); }
+.panel-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.panel-head h2 { margin: 0; }
+.panel label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+.panel input { display: block; width: 100%; margin-top: 4px; background: var(--bg); border: 1px solid var(--line); color: var(--text);
+  border-radius: 8px; padding: 9px 10px; font: 15px Inter, sans-serif; }
+.panel input:focus { outline: 2px solid var(--blue); border-color: transparent; }
+.hint { color: var(--muted); font-size: 13px; margin: 10px 0 0; }
+
+.racers { list-style: none; margin: 14px 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.racers li { display: flex; align-items: flex-start; gap: 10px; padding: 8px 10px; border-radius: 9px; background: var(--panel2); }
+.racers li.me { outline: 1px solid var(--line); }
+.racers li.fin { background: linear-gradient(90deg, rgba(63,209,122,.18), var(--panel2)); }
+.dot { width: 12px; height: 12px; border-radius: 50%; margin-top: 4px; flex: none; box-shadow: 0 0 8px currentColor; }
+.who { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.who .line { color: var(--muted); font-size: 13px; }
+.who .stats { color: var(--muted); font-size: 12px; }
+.tag { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; }
+.tag.you { color: var(--yellow); }
+.mini { background: none; border: 1px solid var(--line); color: var(--text); border-radius: 6px; cursor: pointer; padding: 2px 6px; }
+.host-controls, .self-controls { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+
+.chat-log { list-style: none; margin: 0 0 10px; padding: 0; max-height: 220px; overflow-y: auto; font-size: 13px; display: flex; flex-direction: column; gap: 4px; }
+.chat-log .sys { color: var(--muted); font-style: italic; }
+
+.foot { text-align: center; color: var(--muted); font-size: 12px; padding: 10px 16px 24px; }
+.who .nm { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }

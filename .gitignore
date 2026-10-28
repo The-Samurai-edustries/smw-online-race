@@ -1,0 +1,8 @@
+node_modules/
+*.sfc
+*.smc
+*.swc
+*.fig
+*.zip
+*.png
+.DS_Store
